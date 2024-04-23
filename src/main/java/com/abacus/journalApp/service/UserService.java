@@ -1,5 +1,6 @@
 package com.abacus.journalApp.service;
 
+import com.abacus.journalApp.api.response.WeatherResponse;
 import com.abacus.journalApp.entity.JournalEntity;
 import com.abacus.journalApp.entity.User;
 import com.abacus.journalApp.repository.JournalEntryRepo;
@@ -25,6 +26,9 @@ public class UserService {
 
     @Autowired
     private JournalEntryRepo journalEntryRepo;
+
+    @Autowired
+    WeatherService weatherService;
 
     private static final PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
@@ -57,9 +61,17 @@ public class UserService {
     public ResponseEntity<?> findUser() {
         try {
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-            String userName = authentication.getName();
-            //userRepo.findByUserName(userName)
-            return new ResponseEntity<>("Hi "+ userName, HttpStatus.OK);
+            //userRepo.findByUserName(userName);
+            WeatherResponse response = weatherService.getWeather("Shimla");
+            if(response != null) {
+                double feelslikeC = response.getCurrent().getFeelslikeC();
+                int cloud = response.getCurrent().cloud;
+                int humidity = response.getCurrent().humidity;
+                //String condition = response.getCurrent().getCondition().text;
+                return new ResponseEntity<>("Hi "+authentication.getName()+"\nWeather fells like "+feelslikeC+"\nCloud Coverage is "+cloud+" %\nHumidity is "+humidity/*+"\nOverall it will be "+condition*/, HttpStatus.OK);
+
+            }
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         } catch (Exception e) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
